@@ -13,6 +13,7 @@ FROM alpine:3.20.0
 
 COPY --from=builder /vernemq_build/_build/default/rel/vernemq /vernemq
 
+# The following commands were copied from https://github.com/vernemq/docker-vernemq/blob/2.0.1/Dockerfile.alpine
 RUN apk --no-cache --update --available upgrade && \
     apk add --no-cache ncurses-libs libstdc++ jq curl bash snappy-dev nano && \
     addgroup --gid 10000 vernemq && \
@@ -27,9 +28,9 @@ ENV DOCKER_VERNEMQ_KUBERNETES_LABEL_SELECTOR="app=vernemq" \
 
 WORKDIR /vernemq
 
-COPY --chown=10000:10000 bin/vernemq.sh /usr/sbin/start_vernemq
-COPY --chown=10000:10000 bin/join_cluster.sh /usr/sbin/join_cluster
-COPY --chown=10000:10000 files/vm.args /vernemq/etc/vm.args
+COPY --from=builder --chown=10000:10000 /vernemq_build/bin/vernemq.sh /usr/sbin/start_vernemq
+COPY --from=builder --chown=10000:10000 /vernemq_build/bin/join_cluster.sh /usr/sbin/join_cluster
+COPY --from=builder --chown=10000:10000 /vernemq_build/files/vm.args /vernemq/etc/vm.args
 
 RUN chown -R 10000:10000 /vernemq && \
     ln -s /vernemq/etc /etc/vernemq && \
@@ -55,4 +56,3 @@ HEALTHCHECK CMD vernemq ping | grep -q pong
 
 USER vernemq
 CMD ["start_vernemq"]
-
