@@ -1,1 +1,1 @@
-bin/*, files/* and some parts of the Dockerfile are copied from https://github.com/vernemq/docker-vernemq
+Dockerfile to build docker image with our own vernemq binary build
