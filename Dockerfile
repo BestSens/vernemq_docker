@@ -7,11 +7,17 @@ RUN apk update && apk add --no-cache --update git libressl-dev snappy-dev build-
 RUN mkdir /vernemq_build && \
 	cd /vernemq_build && \
 	git clone https://github.com/vernemq/vernemq -b 2.0.1 . && \
-	make rel
+	make rel && \
+	mkdir /vernemq_docker && \
+	cd /vernemq_docker && \
+	git clone https://github.com/vernemq/docker-vernemq -b 2.0.1 .
 
 FROM alpine:3.20.0
 
 COPY --from=builder /vernemq_build/_build/default/rel/vernemq /vernemq
+COPY --from=builder --chown=10000:10000 /vernemq_docker/bin/vernemq.sh /usr/sbin/start_vernemq
+COPY --from=builder --chown=10000:10000 /vernemq_docker/bin/join_cluster.sh /usr/sbin/join_cluster
+COPY --from=builder --chown=10000:10000 /vernemq_docker/files/vm.args /vernemq/etc/vm.args
 
 # The following commands were copied from https://github.com/vernemq/docker-vernemq/blob/2.0.1/Dockerfile.alpine
 RUN apk --no-cache --update --available upgrade && \
@@ -27,10 +33,6 @@ ENV DOCKER_VERNEMQ_KUBERNETES_LABEL_SELECTOR="app=vernemq" \
     VERNEMQ_VERSION="2.0.1"
 
 WORKDIR /vernemq
-
-COPY --from=builder --chown=10000:10000 /vernemq_build/bin/vernemq.sh /usr/sbin/start_vernemq
-COPY --from=builder --chown=10000:10000 /vernemq_build/bin/join_cluster.sh /usr/sbin/join_cluster
-COPY --from=builder --chown=10000:10000 /vernemq_build/files/vm.args /vernemq/etc/vm.args
 
 RUN chown -R 10000:10000 /vernemq && \
     ln -s /vernemq/etc /etc/vernemq && \
